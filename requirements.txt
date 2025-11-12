@@ -1,0 +1,10 @@
+# 核心功能库
+feedparser
+requests
+beautifulsoup4
+httpx
+openai
+python-dotenv
+
+# 可选的辅助库 (用于进度条)
+tqdm
