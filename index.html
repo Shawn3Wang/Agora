@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agora | 生命科学每日研究进展导读</title>
+    
+    <!-- 1. 引入 Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 配置字体和颜色主题 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'], // 用于元数据，增加科技感
+                    },
+                    colors: {
+                        // 定义 "Cyberpunk/Sci-Fi" 深色科技风格
+                        bg: '#0B0F19',       // 极深蓝背景
+                        surface: '#111827',  // 卡片背景
+                        border: '#1F2937',   // 边框颜色
+                        primary: '#3B82F6',  // 科技蓝
+                        accent: '#06B6D4',   // 赛博青
+                        text: '#F3F4F6',     // 主文本
+                        dim: '#9CA3AF',      // 辅助文本
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0B0F19; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+        
+        /* 隐藏手机端点击高亮 */
+        * { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-bg text-text h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- ================= 1. 侧边栏 (仅桌面端显示) ================= -->
+    <aside class="hidden md:flex flex-col w-72 bg-surface border-r border-border h-full flex-shrink-0 z-20">
+        <!-- 改进 2: Logo 可点击返回首页 -->
+        <div onclick="renderHomePage()" class="h-16 flex items-center px-6 border-b border-border cursor-pointer group">
+            <div class="flex items-center gap-2 text-primary transition-all group-hover:brightness-110">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                <span class="text-xl font-bold tracking-tight">AGORA</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4 px-3">
+            <div class="text-xs font-mono text-dim uppercase tracking-wider mb-2 px-3">Channels</div>
+            <ul id="desktop-nav-list" class="space-y-1">
+                <!-- JavaScript 将在这里生成列表 -->
+                <li class="animate-pulse px-3 py-2 text-sm text-dim">Loading data...</li>
+            </ul>
+        </div>
+        
+        <div class="p-4 border-t border-border text-xs text-dim text-center font-mono">
+            v2.3 | Powered by AI Agents
+        </div>
+    </aside>
+
+    <!-- ================= 2. 顶部栏 (仅手机端显示) ================= -->
+    <header class="md:hidden flex items-center justify-between h-16 px-4 bg-surface border-b border-border flex-shrink-0 z-20">
+        <!-- 改进 2: Logo 可点击返回首页 -->
+        <div onclick="renderHomePage()" class="flex items-center gap-2 text-primary cursor-pointer">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            <span class="text-lg font-bold">AGORA</span>
+        </div>
+        <!-- 手机端下拉选择器 -->
+        <div class="relative">
+            <select id="mobile-label-select" class="appearance-none bg-bg border border-border text-white text-sm rounded-lg pl-3 pr-8 py-2 focus:ring-1 focus:ring-primary focus:outline-none">
+                <option>Loading...</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-dim">
+                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= 3. 主内容区域 ================= -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <!-- 标题区 -->
+        <div class="flex-shrink-0 px-5 py-6 md:px-8 md:py-8 border-b border-border bg-bg/95 backdrop-blur sticky top-0 z-10">
+            <div class="flex items-baseline justify-between">
+                <h1 id="page-title" class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                    Loading...
+                </h1>
+                <!-- 改进 1: 移除独立日期 -->
+            </div>
+            <!-- 改进 1: 副标题将包含日期, 并赋予 ID -->
+            <p id="page-subtitle" class="text-dim text-sm mt-1 font-mono">Loading date...</p>
+        </div>
+
+        <!-- 文章列表容器 -->
+        <!-- *** 更新 1: 增加底部安全边距 (pb-20 -> pb-32) *** -->
+        <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth pb-32">
+            <!-- JavaScript 将在这里生成文章卡片或首页 -->
+            <div class="text-center py-20 text-dim animate-pulse">
+                <p class="text-lg">正在连接数据源...</p>
+                <p class="text-sm mt-2 font-mono text-gray-600">Fetching 'latest_data.json'</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= JavaScript 引擎 ================= -->
+    <script>
+        // 全局状态
+        let ALL_DATA = {};
+        let ALL_LABELS = [];
+        let LATEST_DATE = new Date().toISOString().split('T')[0]; // 默认日期
+
+        // 1. 数据获取核心
+        async function fetchData() {
+            try {
+                const response = await fetch('./latest_data.json');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                ALL_DATA = await response.json();
+                ALL_LABELS = Object.keys(ALL_DATA).sort(); // 标签按首字母排序
+                
+                // 尝试从第一篇文章获取最新日期
+                if (ALL_LABELS.length > 0) {
+                    const firstLabelArticles = ALL_DATA[ALL_LABELS[0]];
+                    if (firstLabelArticles.length > 0) {
+                        LATEST_DATE = firstLabelArticles[0].published_display;
+                    }
+                }
+                
+                initApp();
+
+            } catch (error) {
+                console.error("数据加载失败:", error);
+                document.getElementById('content-area').innerHTML = `
+                    <div class="text-center py-20">
+                        <div class="inline-block p-4 rounded-full bg-red-500/10 text-red-500 mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-white">数据加载失败</h2>
+                        <p class="text-dim mt-2">请确保 <code class="bg-gray-800 px-1 rounded text-primary">latest_data.json</code> 文件已上传至同一目录。</p>
+                        <p class="text-xs text-gray-600 mt-4 font-mono">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 2. 渲染导航栏 (桌面 + 手机)
+        function renderNavigation() {
+            const desktopList = document.getElementById('desktop-nav-list');
+            const mobileSelect = document.getElementById('mobile-label-select');
+            
+            desktopList.innerHTML = '';
+            mobileSelect.innerHTML = '';
+
+            // 改进 2: 为手机添加 "首页" 选项
+            const homeOption = document.createElement('option');
+            homeOption.value = "__HOME__";
+            homeOption.text = "返回首页 (All Channels)";
+            mobileSelect.appendChild(homeOption);
+
+            ALL_LABELS.forEach((label) => {
+                // 渲染桌面列表项
+                const li = document.createElement('li');
+                li.className = `px-3 py-2 rounded-md cursor-pointer text-sm font-medium transition-all duration-200 group flex items-center justify-between text-dim hover:bg-white/5 hover:text-white`;
+                li.innerHTML = `
+                    <span>${label}</span>
+                    <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 font-mono">→</span>
+                `;
+                li.onclick = () => switchTab(label, li);
+                desktopList.appendChild(li);
+
+                // 渲染手机下拉选项
+                const option = document.createElement('option');
+                option.value = label;
+                option.text = label;
+                mobileSelect.appendChild(option);
+            });
+
+            // 手机端切换事件
+            mobileSelect.onchange = (e) => {
+                if (e.target.value === "__HOME__") {
+                    renderHomePage();
+                } else {
+                    switchTab(e.target.value);
+                }
+            };
+        }
+
+        // 3. 切换标签页逻辑
+        function switchTab(label, activeLi = null) {
+            // 更新桌面端高亮
+            const listItems = document.getElementById('desktop-nav-list').children;
+            Array.from(listItems).forEach(li => {
+                if (li.textContent.trim().startsWith(label)) {
+                    li.className = 'px-3 py-2 rounded-md cursor-pointer text-sm font-medium transition-all duration-200 group flex items-center justify-between bg-primary/10 text-primary border border-primary/20 shadow-glow';
+                } else {
+                    li.className = 'px-3 py-2 rounded-md cursor-pointer text-sm font-medium transition-all duration-200 group flex items-center justify-between text-dim hover:bg-white/5 hover:text-white';
+                }
+            });
+
+            // 更新手机下拉框值
+            document.getElementById('mobile-label-select').value = label;
+
+            // 渲染内容
+            renderContent(label);
+        }
+
+        // 4. 清除导航高亮 (用于返回首页时)
+        function clearActiveNav() {
+            const listItems = document.getElementById('desktop-nav-list').children;
+            Array.from(listItems).forEach(li => {
+                li.className = 'px-3 py-2 rounded-md cursor-pointer text-sm font-medium transition-all duration-200 group flex items-center justify-between text-dim hover:bg-white/5 hover:text-white';
+            });
+            document.getElementById('mobile-label-select').value = "__HOME__";
+        }
+
+        // 5. 渲染首页 (改进 2)
+        function renderHomePage() {
+            const contentArea = document.getElementById('content-area');
+            const pageTitle = document.getElementById('page-title');
+            const pageSubtitle = document.getElementById('page-subtitle');
+
+            // 更新标题
+            pageTitle.textContent = "Agora Daily";
+            // 改进 1: 合并日期到副标题
+            pageSubtitle.textContent = `Agora: 生命科学每日研究进展导读 ｜ ${LATEST_DATE}`;
+            
+            clearActiveNav();
+            contentArea.innerHTML = ''; // 清空内容区
+
+            const homeWrapper = document.createElement('div');
+            homeWrapper.className = 'animate-fade-in';
+            homeWrapper.innerHTML = `
+                <h2 class="text-lg font-semibold text-white mb-4">所有频道 (All Channels)</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- JS 在此填充 -->
+                </div>
+            `;
+            
+            const grid = homeWrapper.querySelector('.grid');
+            
+            ALL_LABELS.forEach((label) => {
+                const card = document.createElement('div');
+                card.className = 'bg-surface border border-border rounded-lg p-4 cursor-pointer hover:border-primary hover:bg-primary/10 transition-all duration-200';
+                card.innerHTML = `
+                    <h3 class="font-semibold text-white">${label}</h3>
+                    <p class="text-xs text-dim mt-1 font-mono">${ALL_DATA[label].length} updates</p>
+                `;
+                card.onclick = () => switchTab(label);
+                grid.appendChild(card);
+            });
+
+            contentArea.appendChild(homeWrapper);
+        }
+
+        // 6. 渲染文章内容 (核心渲染器)
+        function renderContent(label) {
+            const articles = ALL_DATA[label] || [];
+            const contentArea = document.getElementById('content-area');
+            const pageTitle = document.getElementById('page-title');
+            const pageSubtitle = document.getElementById('page-subtitle'); // 改进 1
+
+            // 更新标题
+            pageTitle.textContent = label;
+            
+            // 改进 1: 更新副标题 (使用全局日期)
+            pageSubtitle.textContent = `Agora: 生命科学每日研究进展导读 ｜ ${LATEST_DATE}`;
+
+            // 清空并生成文章
+            contentArea.innerHTML = '';
+
+            if (articles.length === 0) {
+                contentArea.innerHTML = `<div class="text-center text-dim py-10">今日暂无该领域更新</div>`;
+                return;
+            }
+
+            articles.forEach((article, index) => {
+                const delay = index * 50; 
+                const card = document.createElement('div');
+                card.className = 'bg-surface border border-border rounded-xl p-5 md:p-6 hover:border-primary/30 transition-all duration-300 group animate-fade-in relative overflow-hidden';
+                card.style.animationDelay = `${delay}ms`;
+                
+                card.innerHTML = `
+                    <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <!-- 合并期刊和日期 -->
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                            ${article.journal} | ${article.published_display}
+                        </span>
+                    </div>
+
+                    <!-- 标题 (强调英文) -->
+                    <!-- *** 更新 2: 交换中英文标题顺序 *** -->
+                    <h2 class="text-lg md:text-xl font-bold text-white mb-1 group-hover:text-primary transition-colors leading-snug">
+                        ${article.title}
+                    </h2>
+                    ${article.title_cn ? `<h3 class="text-sm text-dim mb-3 font-light line-clamp-1">${article.title_cn}</h3>` : ''}
+
+                    <!-- 作者 -->
+                    <div class="text-xs text-gray-500 mb-4 font-mono flex items-center gap-2">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        ${article.authors_short || 'Unknown Authors'}
+                    </div>
+
+                    <!-- 摘要 -->
+                    <div class="bg-bg/50 rounded-lg p-3 mb-4 border border-white/5">
+                        <p class="text-sm text-gray-300 leading-relaxed text-justify">
+                            ${article.abstract_cn || article.abstract || 'No abstract available.'}
+                        </p>
+                    </div>
+
+                    <!-- 底部操作栏 -->
+                    <div class="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
+                        <!-- *** 更新 3: 移除文章卡片上的 labels *** -->
+                        <div class="flex gap-2">
+                            ${'' /* (Labels removed) */}
+                        </div>
+                        <a href="${article.link}" target="_blank" class="flex items-center gap-1 text-sm font-medium text-primary hover:text-white transition-colors">
+                            Read Paper 
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                `;
+                contentArea.appendChild(card);
+            });
+        }
+
+        // 7. 启动 App
+        function initApp() {
+            renderNavigation();
+            // 改进 2: 默认启动首页
+            renderHomePage();
+        }
+
+        // 启动
+        document.addEventListener('DOMContentLoaded', fetchData);
+
+    </script>
+</body>
+</html>
