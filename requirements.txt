@@ -5,6 +5,7 @@ beautifulsoup4
 httpx
 openai
 python-dotenv
+python-dateutil
 
 # 可选的辅助库 (用于进度条)
 tqdm

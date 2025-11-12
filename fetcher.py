@@ -152,12 +152,31 @@ def fetcher_agent(days=2, output_filename=None):
     for url, journal_name in unique_feeds.items():
         print(f"   -> Fetching: {journal_name} ({url})")
         
+        """
         # --- NEW ROBUST FETCHING ---
         try:
             # 1. Fetch content with requests, using headers
             response = requests.get(url, headers=REQUEST_HEADERS, timeout=15)
             response.raise_for_status() # Raise error for bad status (404, 403, 500)
-            
+        """
+        # --- NEW ROBUST FETCHING (WITH PROXY) ---
+        
+        # 1. Get proxy from environment (set by GitHub Actions)
+        proxy_url = os.getenv("PROXY_URL")
+        proxies = {
+            "http": proxy_url,
+            "https": proxy_url,
+        } if proxy_url else None
+
+        try:
+            # 2. Fetch content using headers AND proxy
+            response = requests.get(
+                url, 
+                headers=REQUEST_HEADERS, 
+                proxies=proxies,  # <-- ADD THIS
+                timeout=30        # <-- Increase timeout for proxy
+            )
+            response.raise_for_status()
             # 2. Parse the downloaded content, not the URL
             feed = feedparser.parse(response.content)
             
